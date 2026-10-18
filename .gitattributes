@@ -1,0 +1,7 @@
+# keep the release package byte-exact on every platform
+dist/** -text
+*.sh text eol=lf
+*.dll binary
+*.png binary
+*.jpg binary
+*.wav binary

@@ -1,0 +1,7 @@
+LIBRARY d3d8.dll
+EXPORTS
+    Direct3D8EnableMaximizedWindowedModeShim = Proxy_Direct3D8EnableMaximizedWindowedModeShim@4 @1
+    ValidatePixelShader = Proxy_ValidatePixelShader@16 @2
+    ValidateVertexShader = Proxy_ValidateVertexShader@20 @3
+    DebugSetMute = Proxy_DebugSetMute@0 @4
+    Direct3DCreate8 = Proxy_Direct3DCreate8@4 @5
