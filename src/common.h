@@ -153,6 +153,7 @@ uint32_t Game_CameraObject();
 bool Game_OverrideCamera(const float* world16, float fov, float nearBlend = 0, bool place = true);   // drawing only, until restored
                                                                                                     // (place: its position and target too)
 void Game_RestoreCamera();
+void Game_CameraFrameStart();   // (each frame, before its camera override: what it was drawn with is reset)
 bool Game_GetGameCamera(float* world16, float* fov);         // the game's camera, ignoring our override
 bool Game_PlayerPosition(uint32_t player, float* pos3);
 bool Game_SetFollowCamHeading(float heading);   // turn the on-foot camera around the player

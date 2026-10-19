@@ -93,15 +93,22 @@ uint32_t Game_CameraObject()
 }
 
 // Temporary camera override for the aiming view. The game's camera object is saved and
-// replaced at BeginScene (so only drawing sees it) and put back after the frame is
-// shown - otherwise the change would feed back into the follow camera. The game also
-// updates this camera during the frame, after our BeginScene, so on the way back only
-// what still holds our values is restored; anything the game wrote since is kept.
+// replaced at BeginScene (so only drawing sees it) and put back as soon as the world is
+// drawn - the game's EndScene (scene.cpp; at Present as well, in case). The game updates
+// this camera after drawing and before Present, and a transition (into or out of a car)
+// starts that update from what the camera holds: put back only at Present, ours were taken
+// as the game's own and built on again the next frame - the aim's place, the drunk lean,
+// the lens - out past the sky in a second at 200-460 frames a second (the 2026-10-18
+// report). On the way back only what still holds our values is restored; anything the game
+// wrote since is kept.
 // Fields: fov (+0x10), near (+0x18), view (+0x48), camera->world (+0x88), position (+0xCC), target (+0xD8).
 static uint8_t g_camSave[0xE4 - 0x10];
 static uint8_t g_camWritten[0xE4 - 0x10];   // the block as we left it
 static uint32_t g_camSaved;
 static float g_ovView[16], g_ovFov;   // the camera the frame was drawn with (override)
+static uint32_t g_ovCam;              // ... the camera object it went through (0: the game's own, this frame)
+static float g_ovNear;                // ... and its near plane (the aim brings it in)
+void Game_CameraFrameStart() { g_ovCam = 0; }   // (scene.cpp: each frame, before its override)
 // Drawing only uses the matrices; position and target are used to cull characters (a
 // view cone) and to hide the player when the camera is close to him. Both are written,
 // with the position pushed back along the view: the cone then still covers the picture
@@ -162,6 +169,8 @@ bool Game_OverrideCamera(const float* world16, float fov, float nearBlend, bool 
         WriteProcessMemory(me, (LPVOID)(uintptr_t)(cam + 0xD8), tgt, 12, &done);
     }
     ReadMem(cam + 0x10, g_camWritten, sizeof(g_camWritten));
+    g_ovCam = cam;
+    memcpy(&g_ovNear, g_camWritten + (0x18 - 0x10), 4);
     return true;
 }
 
@@ -197,9 +206,10 @@ bool Game_GetCamera(float* view16, float* proj16)
     if (!cam) return false;
     float params[4];
     if (!ReadMem(cam + 0x10, params, 16) || !ReadMem(cam + 0x48, view16, 64)) return false;
-    if (g_camSaved == cam) {   // the game may touch its camera after drawing; use what we drew with
+    if (g_ovCam == cam) {   // put back (and touched by the game) once the world is drawn; use what we drew with
         memcpy(view16, g_ovView, 64);
         params[0] = g_ovFov;
+        params[2] = g_ovNear;
     }
     float fov = params[0], aspect = params[1], zn = params[2], zf = params[3];
     if (fov <= 0.01f || fov > 3.0f || aspect <= 0.05f || zf <= zn || view16[15] != 1.0f) return false;

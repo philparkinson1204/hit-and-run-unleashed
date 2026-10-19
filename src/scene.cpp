@@ -417,6 +417,7 @@ static HRESULT WINAPI h_BeginScene(IDirect3DDevice8* d)
         if (g_preFrame != g_frameId) {   // once per frame: aiming camera, then the arm/fist pose
             g_preFrame = g_frameId;
             Debug_ApplyPokes('b');
+            Game_CameraFrameStart();
             Gun_PreRenderCamera();
             Gun_PreRender();
         }
@@ -427,6 +428,8 @@ static HRESULT WINAPI h_BeginScene(IDirect3DDevice8* d)
 static HRESULT WINAPI h_EndScene(IDirect3DDevice8* d)
 {
     if (g_probe) ProbeEvent("EndScene");
+    // the world is drawn: the game's own camera back before its update reads it (game.cpp)
+    if (g_inGameScene && !g_ownScene) Game_RestoreCamera();
     g_inGameScene = false;
     return o_EndScene(d);
 }
